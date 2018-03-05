@@ -1,3 +1,5 @@
+import os
+
 from pyspark.sql import SparkSession
 from pyspark import SparkContext, SparkConf
 import pyspark.sql.functions as F
@@ -33,7 +35,7 @@ PG_CONFIG = {
 
 
 def init_spark_context(appname):
-    # os.environ['PYSPARK_SUBMIT_ARGS'] = '--jars jars/postgresql-42.1.4.jar pyspark-shell'
+    os.environ['PYSPARK_SUBMIT_ARGS'] = '--jars jars/postgresql-42.1.4.jar pyspark-shell'
     conf = SparkConf()
     conf.setMaster(SPARK_CONFIG['MASTER'])
     conf.setAppName(appname)
