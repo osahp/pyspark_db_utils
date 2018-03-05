@@ -14,12 +14,12 @@ with open(os.path.join(current_dir, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(name='pyspark_db_utils',
-      version='0.0.3',
+      version='0.0.4',
       description='Usefull functions for working with Database in PySpark (PostgreSQL, ClickHouse)',
       url='https://github.com/osahp/pyspark_db_utils',
       author='Vladimir Smelov',
       author_email='vladimirfol@gmail.com',
-      packages=['pyspark_db_utils'],
+      packages=['pyspark_db_utils', 'pyspark_db_utils.ch', 'pyspark_db_utils.utils'],
       classifiers=[
         'Development Status :: 3 - Alpha',
         'Programming Language :: Python :: 3',
