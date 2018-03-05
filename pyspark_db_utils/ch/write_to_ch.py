@@ -1,45 +1,19 @@
+from typing import Union
+
 from infi.clickhouse_orm.database import Database, DatabaseException
 from infi.clickhouse_orm.models import ModelBase
 from pyspark.sql.types import DateType
 
-from utils.ch.make_ch_model_for_df import make_ch_model_for_df
-from utils.ch.smart_ch_fillna import smart_ch_fillna
-
-#
-# import types
-# from pyspark.sql.types import (
-#     StringType, BinaryType, BooleanType, DateType,
-#     TimestampType, DecimalType, DoubleType, FloatType, ByteType, IntegerType,
-#     LongType, ShortType)
-# from infi.clickhouse_orm import models, engines
-# from infi.clickhouse_orm.fields import (
-#     StringField, FixedStringField, DateField, DateTimeField,
-#     UInt8Field, UInt16Field, UInt32Field, UInt64Field,
-#     Int8Field, Int16Field, Int32Field, Int64Field,
-#     Float32Field, Float64Field, Enum8Field, Enum16Field, NullableField)
-#
-#
-# OK_CH_FIELDS = {
-#     StringType: StringField,
-#     BinaryType: StringField,
-#     BooleanType: UInt8Field,  # To test
-#     DateType: DateField,
-#     TimestampType: DateTimeField,
-#     DoubleType: Float64Field,
-#     FloatType: Float32Field,
-#     ByteType: UInt8Field,
-#     IntegerType: Int32Field,
-#     LongType: Int64Field,
-#     ShortType: Int16Field
-# }
+from pyspark_db_utils.ch.make_ch_model_for_df import make_ch_model_for_df
+from pyspark_db_utils.ch.smart_ch_fillna import smart_ch_fillna
 
 
 class CustomDatabase(Database):
-    def check_table_exist(self, table):
-        """
-        :param table: table to check
-        :type table: str or infi.clickhouse_orm.models.ModelBase
-        :return:
+    def check_table_exist(self, table: Union[str, ModelBase]) -> bool:
+        """ check if table exists
+
+        Args:
+            table: table to check
         """
         if isinstance(table, ModelBase):
             table_name = table.table_name()
@@ -58,7 +32,22 @@ class CustomDatabase(Database):
             exists = True
         return exists
 
-    def describe(self, table):
+    def describe(self, table: Union[ModelBase, str]) -> str:
+        """ Returns result for DESCRIBE statement on table
+
+        Args:
+            table: table
+
+        Returns:
+            describe table
+            i.e.:
+                plu	Int64
+                shop_id	Int64
+                check_date_time	DateTime
+                clickhouse_date	Date
+                created	DateTime
+                type	UInt8
+        """
         if isinstance(table, ModelBase):
             table_name = table.table_name()
         elif isinstance(table, str):
@@ -66,18 +55,11 @@ class CustomDatabase(Database):
         else:
             raise TypeError
         resp = self.raw('describe table {}'.format(table_name))
-        """
-plu	Int64
-shop_id	Int64
-check_date_time	DateTime
-clickhouse_date	Date
-created	DateTime
-type	UInt8
-        """
         return resp
 
 
 def make_sure_exsit(df, date_field_name, table_name, mode, config, logger, pk_columns=None):
+    """ drop and create table if need """
     Model = make_ch_model_for_df(df, date_field_name, table_name, pk_columns=pk_columns)
     db = CustomDatabase(db_name=config["CH_DB_NAME"], db_url=config["CH_URL"])
     if db.check_table_exist(Model):

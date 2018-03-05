@@ -1,11 +1,15 @@
+from functools import reduce
+
+from pyspark.sql import DataFrame
 import pyspark.sql.functions as F
 from pyspark.sql.types import (
     StringType, BinaryType, BooleanType, DateType,
     TimestampType, DecimalType, DoubleType, FloatType, ByteType, IntegerType,
     LongType, ShortType)
-from functools import reduce
 
 
+# Default value (if null) for Spark types
+# IMPORTANT! No default values for Date and TimeStamp types yet!
 SparkType2Default = {
     StringType: '',
     BinaryType: '',
@@ -24,12 +28,8 @@ SparkType2Default = {
 }
 
 
-def check_date_columns_for_nulls(df):
-    """
-    returns True if any Date or Timestamp column consist NULL value
-    :param df:
-    :return:
-    """
+def check_date_columns_for_nulls(df: DataFrame) -> bool:
+    """ returns True if any Date or Timestamp column consist NULL value """
     expr_list = []
     for field in df.schema.fields:
         name = field.name
@@ -43,7 +43,8 @@ def check_date_columns_for_nulls(df):
     return not df_nulls.rdd.isEmpty()
 
 
-def smart_ch_fillna(df):
+def smart_ch_fillna(df: DataFrame) -> DataFrame:
+    """ change null-value to default values """
     mapping = {}
     if check_date_columns_for_nulls(df):
         raise Exception('Date and Timestamp columns mustn\'t be null!')
