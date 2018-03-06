@@ -1,9 +1,20 @@
 # pyspark_db_utils  
 
-It helps you with your DB deals
-Will be updates soon.
+It helps you with your DB deals in Spark
 
-Example of settings:
+## Documentation
+
+http://pyspark-db-utils.readthedocs.io/en/latest/
+
+## Example of using
+
+You need jdbc drivers for using this lib!
+Just get drivers from
+https://jdbc.postgresql.org/download.html
+https://github.com/yandex/clickhouse-jdbc
+and put it in jars/ directory in your project
+
+### Example settings:
 ```
 settings = {
   "PG_PROPERTIES": {
@@ -16,7 +27,11 @@ settings = {
 }
 ```
 
-Example of using:
+### Example of code
+
+see example.py
+
+### Example of run
 ```
 vsmelov@vsmelov:~/PycharmProjects/pyspark_db_utils$ mkdir jars
 vsmelov@vsmelov:~/PycharmProjects/pyspark_db_utils$ cp /var/bigdata/spark-2.2.0-bin-hadoop2.7/jars/postgresql-42.1.4.jar ./jars/

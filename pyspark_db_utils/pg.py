@@ -19,6 +19,10 @@ def read_from_pg(config: Dict, sql: str, sc: SparkContext, logger: Optional[Logg
     Read dataframe from postgres
     :param settings: settings for connect
     :param sql: sql
+        it may be one of these format
+        - 'table_name'
+        - 'schema_name.table_name'
+        - '(select a, b, c from t1 join t2 ...) as foo'
     :param sc: specific current spark_context or None
     :param logger: logger
     :return: selected DF
