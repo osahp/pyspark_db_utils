@@ -1,3 +1,9 @@
+# doc
 sphinxcontrib-napoleon==0.6.1
 sphinx-rtd-theme==0.2.4
 sphinx-autodoc-typehints==1.2.5
+
+pyspark==2.2.0
+JayDeBeApi==1.1.1
+infi.clickhouse-orm==0.9.4
+psycopg2==2.7.4

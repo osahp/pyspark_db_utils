@@ -1,7 +1,5 @@
 import unittest
 from itertools import chain
-from beauty.db.pg import PG
-from beauty.loader.client import Client
 import testing.postgresql
 import datetime
 from unittest import TestCase
