@@ -9,11 +9,13 @@ from pyspark_db_utils.ch.smart_ch_fillna import smart_ch_fillna
 
 
 class CustomDatabase(Database):
-    def check_table_exist(self, table: Union[str, ModelBase]) -> bool:
-        """ check if table exists
+    """ ClickHouse database with useful functions """
+    @staticmethod
+    def table2table_name(table: Union[str, ModelBase]) -> str:
+        """ get table_name for table
 
         Args:
-            table: table to check
+             table: may be string of table_name or db Model class
         """
         if isinstance(table, ModelBase):
             table_name = table.table_name()
@@ -21,7 +23,15 @@ class CustomDatabase(Database):
             table_name = table
         else:
             raise TypeError
+        return table_name
 
+    def check_table_exist(self, table: Union[str, ModelBase]) -> bool:
+        """ check if table exists
+
+        Args:
+            table: table to check
+        """
+        table_name = self.table2table_name(table)
         try:
             # TODO: use EXISTS statement in CHSQL
             resp = self.raw('select * from {} limit 0'.format(table_name))
@@ -40,7 +50,10 @@ class CustomDatabase(Database):
 
         Returns:
             describe table
-            i.e.:
+
+        Examples:
+            example of output::
+
                 plu	Int64
                 shop_id	Int64
                 check_date_time	DateTime
@@ -48,12 +61,7 @@ class CustomDatabase(Database):
                 created	DateTime
                 type	UInt8
         """
-        if isinstance(table, ModelBase):
-            table_name = table.table_name()
-        elif isinstance(table, str):
-            table_name = table
-        else:
-            raise TypeError
+        table_name = self.table2table_name(table)
         resp = self.raw('describe table {}'.format(table_name))
         return resp
 
@@ -78,20 +86,22 @@ def make_sure_exsit(df, date_field_name, table_name, mode, config, logger, pk_co
     db.describe(Model)
 
 
-def write_to_ch(df, date_field_name, table_name, mode, config, logger, pk_columns=None):
-    """
-    Dumps PySpark DataFrame to ClickHouse,
-        create or recreate table if needed.
-    :param df: PySpark DataFrame
-    :param mode: 'overwrite' / 'append' / 'fail'
-        describe, what do if table already exists
-            overwrite: drop and create table and insert rows (CH hasn't truncate operator)
-            append: insert rows to exist table
-            fail: raise Exception
-    :param table_name: table name
-    :param date_field_name: date field for partitioning
-    :param pk_columns: list/tuple of primary key columns (None for all columns)
-    :return:
+def write_to_ch(df, date_field_name, table_name, mode, config, logger, pk_columns=None) -> None:
+    """ Dumps PySpark DataFrame to ClickHouse, create or recreate table if needed.
+
+    Args:
+        df: PySpark DataFrame
+        mode: describe, what do if table already exists
+
+            must be one of 'overwrite' / 'append' / 'fail':
+
+                - overwrite: drop and create table and insert rows (CH hasn't truncate operator)
+                - append: insert rows to exist table
+                - fail: raise Exception
+
+        table_name: table name
+        date_field_name: date field for partitioning
+        pk_columns: list/tuple of primary key columns (None for all columns)
     """
     assert mode in ['overwrite', 'append', 'fail'], "mode must be 'overwrite' / 'append' / 'fail'"
     assert '.' not in table_name, 'dots are not allowed in table_name'

@@ -1,4 +1,9 @@
-from typing import Dict, List, Set, Optional, Iterator, Iterable
+""" Utils for Postgres.
+
+    Most useful are: :func:`read_from_pg`, :func:`write_to_pg`, :func:`execute_batch`
+"""
+
+from typing import Dict, List, Set, Optional, Iterator, Iterable, Any
 from contextlib import contextmanager
 from itertools import chain
 from logging import Logger
@@ -14,18 +19,24 @@ from pyspark.sql import DataFrame
 from pyspark_db_utils.utils.drop_columns import drop_other_columns
 
 
-def read_from_pg(config: Dict, sql: str, sc: SparkContext, logger: Optional[Logger]=None) -> DataFrame:
-    """
-    Read dataframe from postgres
-    :param settings: settings for connect
-    :param sql: sql
-        it may be one of these format
-        - 'table_name'
-        - 'schema_name.table_name'
-        - '(select a, b, c from t1 join t2 ...) as foo'
-    :param sc: specific current spark_context or None
-    :param logger: logger
-    :return: selected DF
+def read_from_pg(config: dict, sql: str, sc: SparkContext, logger: Optional[Logger]=None) -> DataFrame:
+    """ Read dataframe from postgres
+
+    Args:
+        config: settings for connect
+        sql: sql to read, it may be one of these format
+
+             - 'table_name'
+
+             - 'schema_name.table_name'
+
+             - '(select a, b, c from t1 join t2 ...) as foo'
+
+        sc: specific current spark_context or None
+        logger: logger
+
+    Returns:
+        selected DF
     """
     if logger:
         logger.info('read_from_pg:\n{}'.format(sql))
@@ -39,19 +50,23 @@ def read_from_pg(config: Dict, sql: str, sc: SparkContext, logger: Optional[Logg
 
 
 def write_to_pg(df: DataFrame, config: dict, table: str, mode: str='append', logger: Optional[Logger]=None) -> None:
-    """
-    Write dataframe to postgres
+    """ Write dataframe to postgres
+
     Args:
         df: DataFrame to write
         config: config dict
         table: table_name
         logger: logger
-        mode: mode, one of these
-            append - create table if not exists (with all columns of DataFrame)
-                     and write records to table (using fields only in table columns)
-            overwrite - truncate table (if exists) and write records (using fields only in table columns)
-            overwrite_full - drop table and create new one with all columns and DataFrame and append records to it
-            fail - fail if table is not exists, otherwise append records to it
+        mode: mode, one of these:
+
+            - append - create table if not exists (with all columns of DataFrame)
+                and write records to table (using fields only in table columns)
+
+            - overwrite - truncate table (if exists) and write records (using fields only in table columns)
+
+            - overwrite_full - drop table and create new one with all columns and DataFrame and append records to it
+
+            - fail - fail if table is not exists, otherwise append records to it
     """
     field_names = get_field_names(table, config)
     table_exists = bool(field_names)
@@ -100,7 +115,10 @@ def get_field_names(table_name: str, config: Dict) -> Set[str]:
 
 def get_field_names_stub(df: DataFrame, config: Dict, table_name: str, sc: SparkContext) -> Set[str]:
     """ get field names of table
-        WTF? Why not just use get_field_names
+
+        ! DONT USE IT ! Use get_field_names instead !
+
+        TODO: replace with get_field_names
     """
     sql = '(select * from {} limit 1) as smth'.format(table_name)
     df_tmp = read_from_pg(config, sql, sc)
@@ -112,7 +130,15 @@ def get_field_names_stub(df: DataFrame, config: Dict, table_name: str, sc: Spark
 
 @contextmanager
 def jdbc_connect(config: Dict, autocommit: bool=False):
-    """ context manager, opens and closes connection correctly """
+    """ context manager, opens and closes connection correctly
+
+    Args:
+        config: config
+        autocommit: enable autocommit
+
+    Yields:
+        tuple: connection, cursor
+    """
     conn = jaydebeapi.connect(config["PG_PROPERTIES"]['driver'],
                               config["PG_URL"],
                               {'user': config["PG_PROPERTIES"]['user'],
@@ -128,7 +154,14 @@ def jdbc_connect(config: Dict, autocommit: bool=False):
 
 
 def mogrify(val) -> str:
-    """ cast python values to raw-sql correctly and escape if necessary """
+    """ cast python values to raw-sql correctly and escape if necessary
+
+    Args:
+        val: some value
+
+    Returns:
+        mogrified value
+    """
     if isinstance(val, str):
         escaped = val.replace("'", "''")
         return "'{}'".format(escaped)
@@ -145,13 +178,22 @@ def mogrify(val) -> str:
 
 
 class MogrifyFormatter(string.Formatter):
+    """ custom formatter to mogrify {}-like formatting strings """
     def get_value(self, key, args, kwargs) -> str:
         row = args[0]
         return mogrify(row[key])
 
 
 def batcher(iterable: Iterable, batch_size: int):
-    """ yields batches of iterable """
+    """ yields batches of iterable
+
+    Args:
+        iterable: something to batch
+        batch_size: batch size
+
+    Yields:
+        batch, until end of iterable
+    """
     batch = []
     for obj in iterable:
         batch.append(obj)
@@ -165,7 +207,7 @@ def batcher(iterable: Iterable, batch_size: int):
 mogrifier = MogrifyFormatter()
 
 
-def execute_batch_partition(partition: Iterator, sql_temp: str, config: Dict, batch_size: int) -> None:
+def _execute_batch_partition(partition: Iterator, sql_temp: str, config: Dict, batch_size: int) -> None:
     """ execute sql_temp for rows in partition in batch """
 
     # For debugging RAM
@@ -190,28 +232,46 @@ def execute_batch_partition(partition: Iterator, sql_temp: str, config: Dict, ba
 def execute_batch(df: DataFrame, sql_temp: str, config: Dict, batch_size: int=1000) -> None:
     """
     Very useful function to run custom SQL on each rows in DataFrame by batches.
+
     For example UPDATE / DELETE / etc
 
     Attention!
     It's expecting that sql_temp string using {} like formatting (because it's easy to overload it by custom formatter.
     execute_batch replace {field} by field value for each row in DataFrame.
     So, if you want to make some formatting (such as table_name or constant values) you should use %()s formatting.
-        i.e.
-        execute_batch(df, config=config,
-                      sql_temp='update %(table_name)s set out_date=%(filename_date)s where id={id}'
-                                    % {'table_name': table_name, 'filename_date': filename_date})
+
+
+    Examples:
+        update table rows by id and values for DF records::
+
+            >> execute_batch(df, config=config,
+                sql_temp='update %(table_name)s set out_date=%(filename_date)s where id={id}'
+                % {'table_name': table_name, 'filename_date': filename_date})
+
+        update table rows fields by complex sql expression::
+
+            >> execute_batch(df=df, sql_temp='''
+                UPDATE reporting.cases c
+                     SET
+                          close_date = {check_date_time},
+                          status = 2,
+                          lost_sales = EXTRACT(epoch FROM {check_date_time} - c.start_date) * (3.0 / 7) / (24 * 3600)
+                     WHERE
+                          c.id = {id}
+               ''', config=config)
+
     """
     df.foreachPartition(
-        functools.partial(execute_batch_partition, sql_temp=sql_temp, config=config, batch_size=batch_size))
+        functools.partial(_execute_batch_partition, sql_temp=sql_temp, config=config, batch_size=batch_size))
 
 
-def update_many_partition(partition: Iterator,
-                          table_name: str,
-                          set_to: Dict,
-                          config: Dict,
-                          batch_size: int,
-                          id_field: str='id'
-                          ) -> None:
+def _update_many_partition(partition: Iterator,
+                           table_name: str,
+                           set_to: Dict[str, Any],
+                           config: Dict,
+                           batch_size: int,
+                           id_field: str='id'
+                           ) -> None:
     """ Update rows in partition. Set some fields to the new same-values.
 
     Args:
@@ -244,29 +304,33 @@ def update_many(df: DataFrame,
                 batch_size: int=1000,
                 id_field: str='id'
                 ) -> None:
-    """ Update rows in DataFrame. Set some fields to the new same-values.
+    """ Update rows in DataFrame. Set some fields to the new constant same-values.
+
+    Note:
+        this function update fields to constant values,
+        if you want to make some update-sql-expression, use execute_batch
 
     Args:
         df: DataFrame
         table_name: table name
-        set_to: dict such as {'field_name1': new_value1, 'field_name2': new_value2}
+        set_to: dict such as {'field_name1': new_const_value1, 'field_name2': new_const_value2}
         config: config
         batch_size: batch size
         id_field: id field
     """
     df.foreachPartition(
-        functools.partial(update_many_partition, table_name=table_name, set_to=set_to, config=config,
+        functools.partial(_update_many_partition, table_name=table_name, set_to=set_to, config=config,
                           batch_size=batch_size, id_field=id_field))
 
 
-def insert_values_partition(partition: Iterator,
-                            sql_temp: str,
-                            values_temp: str,
-                            config: Dict,
-                            batch_size: int,
-                            fields_stmt: Optional[str]=None,
-                            table_name: Optional[str]=None,
-                            logger: Optional[Logger]=None):
+def _insert_values_partition(partition: Iterator,
+                             sql_temp: str,
+                             values_temp: str,
+                             config: Dict,
+                             batch_size: int,
+                             fields_stmt: Optional[str]=None,
+                             table_name: Optional[str]=None,
+                             logger: Optional[Logger]=None):
     """ Insert rows from partition.
 
     Args:
@@ -288,7 +352,7 @@ def insert_values_partition(partition: Iterator,
             sql = sql_temp.format(values=values, fields=fields_stmt, table_name=table_name)
             if logger:
                 max_len = 1024
-                logger.info('insert_values_partition sql[:{}]: {}'.format(max_len, sql[:max_len]))
+                logger.info('_insert_values_partition sql[:{}]: {}'.format(max_len, sql[:max_len]))
             curs.execute(sql)
         conn.commit()
 
@@ -308,6 +372,13 @@ def insert_values(df: DataFrame,
                   sc: SparkContext=None
                   ) -> None:
     """ Insert rows from DataFrame.
+
+    Note:
+        Use write_to_pg as often as possible.
+
+        Unfortunately, it's not able to use ON CONFLICT and ON UPDATE statements,
+        so we are forced to write custom function.
+
 
     Args:
         df: DataFrame
@@ -362,7 +433,7 @@ def insert_values(df: DataFrame,
         values_temp = "({})".format(values_temp)
 
     cleaned_df.foreachPartition(
-        functools.partial(insert_values_partition,
+        functools.partial(_insert_values_partition,
                           sql_temp=sql_temp, values_temp=values_temp, fields_stmt=fields_stmt, table_name=table_name,
                           config=config, batch_size=batch_size, logger=logger))
     cleaned_df.unpersist()

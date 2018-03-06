@@ -1,3 +1,7 @@
+""" It's just simple example of using lib
+    It asks you about DB connection parameters, makes DF, writes to DB, loads it back and shows.
+"""
+
 import os
 
 from pyspark.sql import SparkSession
@@ -19,13 +23,14 @@ SPARK_CONFIG = {
 }
 
 
-def get_pg_config():
+def get_pg_config() -> dict:
+    """ Ask DB connections params"""
     host = input('host: ')
     db = input('db: ')
     user = input('user: ')
     password = input('password: ')
 
-    PG_CONFIG = {
+    return {
       "PG_PROPERTIES": {
         "user": user,
         "password": password,
@@ -36,7 +41,8 @@ def get_pg_config():
     }
 
 
-def init_spark_context(appname):
+def init_spark_context(appname: str) -> SparkContext:
+    """ init spark context """
     os.environ['PYSPARK_SUBMIT_ARGS'] = '--jars jars/postgresql-42.1.4.jar pyspark-shell'
     conf = SparkConf()
     conf.setMaster(SPARK_CONFIG['MASTER'])
@@ -50,7 +56,8 @@ def init_spark_context(appname):
     return sc
 
 
-def main(spark):
+def main(spark) -> None:
+    """ run example """
     PG_CONFIG = get_pg_config()
 
     print('TRY: create df')

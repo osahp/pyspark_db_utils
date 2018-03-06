@@ -12,9 +12,11 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+import os
+import sys
+docs_path = os.path.abspath('.')
+project_path = os.path.dirname(docs_path)
+sys.path.insert(0, project_path)
 
 
 # -- Project information -----------------------------------------------------
@@ -43,6 +45,7 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.ifconfig',
     'sphinxcontrib.napoleon',
+    'sphinx_autodoc_typehints',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -81,6 +84,9 @@ pygments_style = 'sphinx'
 
 # html_theme = 'alabaster'  # DEFAULT
 html_theme = "sphinx_rtd_theme"
+
+# order as in script, not in alphabet
+autodoc_member_order = 'bysource'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
