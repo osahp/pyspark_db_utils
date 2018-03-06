@@ -1,5 +1,5 @@
 .. pyspark_db_utils documentation master file, created by
-   sphinx-quickstart on Tue Mar  6 10:31:31 2018.
+   sphinx-quickstart on Tue Mar  6 11:09:37 2018.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 

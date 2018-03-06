@@ -18,20 +18,22 @@ SPARK_CONFIG = {
     }
 }
 
-host = input('host: ')
-db = input('db: ')
-user = input('user: ')
-password = input('password: ')
 
-PG_CONFIG = {
-  "PG_PROPERTIES": {
-    "user": user,
-    "password": password,
-    "driver": "org.postgresql.Driver"
-  },
-  "PG_DRIVER_PATH": "jars/postgresql-42.1.4.jar",
-  "PG_URL": "jdbc:postgresql://{host}/{db}".format(host=host, db=db),
-}
+def get_pg_config():
+    host = input('host: ')
+    db = input('db: ')
+    user = input('user: ')
+    password = input('password: ')
+
+    PG_CONFIG = {
+      "PG_PROPERTIES": {
+        "user": user,
+        "password": password,
+        "driver": "org.postgresql.Driver"
+      },
+      "PG_DRIVER_PATH": "jars/postgresql-42.1.4.jar",
+      "PG_URL": "jdbc:postgresql://{host}/{db}".format(host=host, db=db),
+    }
 
 
 def init_spark_context(appname):
@@ -49,6 +51,8 @@ def init_spark_context(appname):
 
 
 def main(spark):
+    PG_CONFIG = get_pg_config()
+
     print('TRY: create df')
     df = spark.range(1, 20, 1, 4).withColumn('mono_id', F.monotonically_increasing_id())
     print('OK: create df')
