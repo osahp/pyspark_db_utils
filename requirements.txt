@@ -7,3 +7,4 @@ sphinx-autodoc-typehints==1.2.5
 JayDeBeApi==1.1.1
 infi.clickhouse-orm==0.9.4
 psycopg2==2.7.4
+testing.postgresql==1.3.0

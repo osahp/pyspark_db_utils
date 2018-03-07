@@ -6,17 +6,33 @@
 # full list see the documentation:
 # http://www.sphinx-doc.org/en/stable/config
 
+import os
+import sys
+from unittest.mock import MagicMock
+
+
 # -- Path setup --------------------------------------------------------------
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-import os
-import sys
+
 docs_path = os.path.abspath('.')
 project_path = os.path.dirname(docs_path)
 sys.path.insert(0, project_path)
+
+
+# -- Mock modules -----------------------------------------------------
+# see https://docs.readthedocs.io/en/latest/faq.html#i-get-import-errors-on-libraries-that-depend-on-c-modules
+
+class Mock(MagicMock):
+    @classmethod
+    def __getattr__(cls, name):
+            return MagicMock()
+
+MOCK_MODULES = ['pyspark']
+sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 
 # -- Project information -----------------------------------------------------
