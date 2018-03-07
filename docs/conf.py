@@ -31,7 +31,7 @@ class Mock(MagicMock):
     def __getattr__(cls, name):
             return MagicMock()
 
-MOCK_MODULES = ['pyspark', 'pyspark.sql']
+MOCK_MODULES = ['pyspark', 'pyspark.sql', 'pyspark.sql.types', 'pyspark.sql.functions']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 
