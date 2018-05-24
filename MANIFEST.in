@@ -1,2 +1,4 @@
 include README.md
 include LICENSE
+include NOTES
+include pyspark_db_utils/jars/*.jar
