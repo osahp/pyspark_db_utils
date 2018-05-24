@@ -14,7 +14,7 @@ with open(os.path.join(current_dir, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(name='pyspark_db_utils',
-      version='0.0.5',
+      version='0.0.6',
       description='Usefull functions for working with Database in PySpark (PostgreSQL, ClickHouse)',
       url='https://github.com/osahp/pyspark_db_utils',
       author='Vladimir Smelov',
