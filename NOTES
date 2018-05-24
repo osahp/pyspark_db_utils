@@ -1,7 +1,13 @@
-python3.5 -m pip install --user --upgrade setuptools wheel twine
-python3.5 setup.py sdist bdist_wheel
-python3.5 -m twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+# packaging project
+python3.5 -m pip install --user --upgrade setuptools wheel
+sudo apt-get install twine
 
+rm -f dist/*
+python3.5 setup.py sdist bdist_wheel
+twine upload --repository-url https://test.pypi.org/legacy/ dist/*.tar.gz
+
+
+# gen doc
 extensions = [
    'sphinx.ext.autodoc',
    'sphinx.ext.intersphinx',

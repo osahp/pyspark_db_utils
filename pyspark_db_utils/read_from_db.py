@@ -12,3 +12,17 @@ def read_from_db(con_info, table, spark_session=None, **kwargs):
     return spark_session.read.jdbc(table=table,
                                    **get_spark_con_params(con_info),
                                    **kwargs)
+
+
+def read_from_ch(config, **kwargs):
+    """
+    read DataFrame from ClickHouse
+    """
+    return read_from_db(config['clickhouse'], **kwargs)
+
+
+def read_from_pg(config, **kwargs):
+    """
+    read DataFrame from PostgreSQL
+    """
+    return read_from_db(config['postgresql'], **kwargs)
